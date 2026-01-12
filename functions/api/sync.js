@@ -1,10 +1,6 @@
-// Cloudflare Pages Function for Koha Sync
-// Uses Cloudflare KV for storage
-
 export async function onRequest(context) {
   const { request, env } = context;
   
-  // Handle CORS
   if (request.method === "OPTIONS") {
     return new Response(null, {
       status: 204,
@@ -25,7 +21,6 @@ export async function onRequest(context) {
     const url = new URL(request.url);
     const syncId = url.searchParams.get("id");
 
-    // UPDATE - PUT or POST with ID (merge data)
     if ((request.method === "PUT" || request.method === "POST") && syncId) {
       const newData = await request.json();
       const id = syncId.toUpperCase();
@@ -40,7 +35,6 @@ export async function onRequest(context) {
 
       const existing = JSON.parse(existingStr);
 
-      // Merge arrays by ID
       const mergeArrays = (arr1 = [], arr2 = []) => {
         const map = new Map();
         [...arr1, ...arr2].forEach((item) => map.set(item.id, item));
@@ -64,11 +58,9 @@ export async function onRequest(context) {
       });
     }
 
-    // CREATE - POST without ID
     if (request.method === "POST" && !syncId) {
       const data = await request.json();
       
-      // Generate a 5-letter sync code (uppercase)
       const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
       let newId = '';
       for (let i = 0; i < 5; i++) {
@@ -89,7 +81,6 @@ export async function onRequest(context) {
       });
     }
 
-    // GET - retrieve data
     if (request.method === "GET" && syncId) {
       const dataStr = await env.KOHA_KV.get(syncId.toUpperCase());
       
@@ -112,7 +103,6 @@ export async function onRequest(context) {
       headers: corsHeaders,
     });
   } catch (error) {
-    console.error("Sync error:", error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: corsHeaders,
